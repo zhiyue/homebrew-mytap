@@ -1,0 +1,38 @@
+# macOS相关
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows相关
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# 编辑器相关
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Ruby相关
+*.gem
+*.rbc
+/.config
+/coverage/
+/InstalledFiles
+/pkg/
+/spec/reports/
+/spec/examples.txt
+/test/tmp/
+/test/version_tmp/
+/tmp/
+
+# 特定于Homebrew的
+/vendor/
+
+# 本地开发环境
+.env
+.env.local
