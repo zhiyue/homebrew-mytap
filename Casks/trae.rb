@@ -1,74 +1,40 @@
 cask "trae" do
   arch arm: "arm64", intel: "x64"
-  
-  # 使用固定版本号，但URL从API动态获取
+
   version "1.0.8277"
-  sha256 :no_check
+  sha256 arm:   "3920fec03458666db73d83d2658fb9b526e50a075c9d7e1f4ea935832e9c0fb4",
+         intel: "3921f65f630fa16bdc1be7c8d6ad9ff911066bf387d73f1ece994a395d6775b8"
+
+  url "https://lf-cdn.trae.ai/obj/trae-ai-us/pkg/app/releases/stable/#{version}/darwin/Trae-darwin-#{arch}.dmg"
+  name "Trae"
+  desc "Adaptive AI IDE"
+  homepage "https://www.trae.ai/"
 
   livecheck do
-    url "https://api.marscode.cn/icube/api/v1/native/version/trae/latest"
+    url "https://api.trae.ai/icube/api/v1/native/version/trae/latest"
     strategy :json do |json|
-      json["data"]["manifest"]["darwin"]["version"]
+      json.dig("data", "manifest", "darwin", "version")
     end
   end
-
-  url do
-    require "json"
-    require "net/http"
-    require "timeout"
-    
-    api_url = "https://api.marscode.cn/icube/api/v1/native/version/trae/latest"
-    uri = URI(api_url)
-    response = Net::HTTP.get(uri)
-    json_data = JSON.parse(response)
-    
-    download_data = json_data["data"]["manifest"]["darwin"]["download"]
-    
-    # 尝试获取最快的CDN
-    fastest_url = nil
-    min_time = Float::INFINITY
-    
-    download_data.each do |region_data|
-      cdn_url = arch == "arm64" ? region_data["apple"] : region_data["intel"]
-      cdn_uri = URI(cdn_url)
-      
-      begin
-        Timeout::timeout(3) do  # 设置3秒超时
-          start_time = Time.now
-          Net::HTTP.start(cdn_uri.host, cdn_uri.port, use_ssl: cdn_uri.scheme == 'https') do |http|
-            http.read_timeout = 2  # 设置读取超时
-            http.head(cdn_uri.path)
-          end
-          response_time = Time.now - start_time
-          
-          if response_time < min_time
-            min_time = response_time
-            fastest_url = cdn_url
-          end
-        end
-      rescue
-        next  # 如果连接超时或失败，尝试下一个CDN
-      end
-    end
-    
-    # 如果所有CDN都无法连接，使用默认的中国区CDN
-    fastest_url || (arch == "arm64" ? download_data[0]["apple"] : download_data[0]["intel"])
-  end
-
-  name "Trae IDE"
-  desc "集成开发环境，支持AI辅助编程"
-  homepage "https://trae.com.cn"
 
   auto_updates true
   depends_on macos: ">= :catalina"
 
   app "Trae.app"
 
+  uninstall launchctl: "com.trae.ShipIt",
+            quit:      "com.trae.app"
+
   zap trash: [
-    "~/Library/Application Support/trae",
-    "~/Library/Caches/trae",
-    "~/Library/Logs/trae",
-    "~/Library/Preferences/com.trae.plist",
-    "~/Library/Saved Application State/com.trae.savedState"
+    "~/.trae",
+    "~/Library/Application Support/com.apple.sharedfilelist/com.apple.LSSharedFileList.ApplicationRecentDocuments/com.trae.app.sfl*",
+    "~/Library/Application Support/Trae",
+    "~/Library/Caches/com.trae.app",
+    "~/Library/Caches/com.trae.ShipIt",
+    "~/Library/HTTPStorages/com.trae.app",
+    "~/Library/Preferences/ByHost/com.trae.ShipIt.*.plist",
+    "~/Library/Preferences/com.trae.app.helper.plist",
+    "~/Library/Preferences/com.trae.app.plist",
+    "~/Library/Saved Application State/com.trae.app.savedState",
   ]
 end
