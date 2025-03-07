@@ -22,25 +22,26 @@ cask "synergy3" do
   end
 
   auto_updates true
-  depends_on macos: ">= :catalina"
   conflicts_with cask: "synergy"
+  depends_on macos: ">= :catalina"
+
   app "Synergy.app"
 
-  uninstall quit:      "com.symless.synergy",
-            launchctl: "com.symless.synergy3",
-            delete:    [
-              "/Applications/Synergy.app",
-              "/Library/PrivilegedHelperTools/synergy-core"
-            ]
+  uninstall delete: [
+    "/Applications/Synergy.app",
+    "/Library/PrivilegedHelperTools/synergy-core",
+  ],
+  launchctl: "com.symless.synergy3",
+  quit: "com.symless.synergy"
 
   zap trash: [
-    "~/Library/Application Support/synergy",
     "~/Library/Application Support/CrashReporter/synergy_*.plist",
+    "~/Library/Application Support/synergy",
     "~/Library/LaunchAgents/com.symless.synergy3.plist",
-    "~/Library/Logs/Synergy",
     "~/Library/Logs/DiagnosticReports/synergy-core-*.ips",
-    "~/Library/Preferences/com.symless.synergy.plist",
+    "~/Library/Logs/Synergy",
     "~/Library/Preferences/Synergy",
-    "~/Library/Saved Application State/com.symless.synergy.savedState"
+    "~/Library/Preferences/com.symless.synergy.plist",
+    "~/Library/Saved Application State/com.symless.synergy.savedState",
   ]
 end
