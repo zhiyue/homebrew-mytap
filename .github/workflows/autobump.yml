@@ -46,7 +46,10 @@ jobs:
               PREFIXED_CASKS="$REPO/$cask"
             fi
           done
+          echo "调试信息 - 原始 CASKS: $CASKS"
+          echo "调试信息 - 带前缀的 PREFIXED_CASKS: $PREFIXED_CASKS"
           echo "autobump_list=$PREFIXED_CASKS" >> "$GITHUB_OUTPUT"
+          echo "调试信息 - 最终设置的 autobump_list: $PREFIXED_CASKS"
 
       - name: Bump casks
         uses: Homebrew/actions/bump-packages@master
