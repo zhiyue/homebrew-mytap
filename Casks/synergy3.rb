@@ -27,21 +27,21 @@ cask "synergy3" do
 
   app "Synergy.app"
 
-  uninstall quit:      "com.symless.synergy",
-            launchctl: "com.symless.synergy3",
+  uninstall launchctl: "com.symless.synergy3",
+            quit:      "com.symless.synergy",
             delete:    [
-              "/Applications/Synergy.app",
-              "/Library/PrivilegedHelperTools/synergy-core",
-            ]
+                         "/Applications/Synergy.app",
+                         "/Library/PrivilegedHelperTools/synergy-core",
+                       ]
 
   zap trash: [
-    "~/Library/Application Support/CrashReporter/synergy_*.plist",
-    "~/Library/Application Support/synergy",
-    "~/Library/LaunchAgents/com.symless.synergy3.plist",
-    "~/Library/Logs/DiagnosticReports/synergy-core-*.ips",
-    "~/Library/Logs/Synergy",
-    "~/Library/Preferences/Synergy",
-    "~/Library/Preferences/com.symless.synergy.plist",
-    "~/Library/Saved Application State/com.symless.synergy.savedState",
-  ]
+               "~/Library/Application Support/CrashReporter/synergy_*.plist",
+               "~/Library/Application Support/synergy",
+               "~/Library/LaunchAgents/com.symless.synergy3.plist",
+               "~/Library/Logs/DiagnosticReports/synergy-core-*.ips",
+               "~/Library/Logs/Synergy",
+               "~/Library/Preferences/com.symless.synergy.plist",
+               "~/Library/Preferences/Synergy",
+               "~/Library/Saved Application State/com.symless.synergy.savedState",
+             ]
 end
