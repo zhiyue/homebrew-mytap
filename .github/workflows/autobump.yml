@@ -53,7 +53,7 @@ jobs:
 
       - name: Bump casks
         run: |
-          brew bump --no-fork --tap "zhiyue/homebrew-mytap" --open-pr
+          brew bump --full-name --no-fork --tap "zhiyue/homebrew-mytap" --open-pr --cask --debug
         env:
           HOMEBREW_TEST_BOT_AUTOBUMP: 1
           HOMEBREW_GITHUB_PACKAGES_USER: "zhiyue"
