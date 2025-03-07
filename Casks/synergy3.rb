@@ -24,7 +24,7 @@ cask "synergy3" do
 
   uninstall launchctl: "com.symless.synergy3",
             quit:      "com.symless.synergy",
-            delete: [
+            delete:    [
               "/Applications/Synergy.app",
               "/Library/PrivilegedHelperTools/synergy-core",
             ]
