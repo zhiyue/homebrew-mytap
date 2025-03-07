@@ -55,40 +55,63 @@ jobs:
             if [ "$curr_version" != "$latest_version" ] && [ "$latest_version" != "null" ]; then
               echo "$cask_name 可更新: $curr_version -> $latest_version"
               
-              # 使用唯一的分支名，包含时间戳
-              branch_name="bump-${cask_name}-${latest_version}-${timestamp}"
+              # 清理可能存在的分支
+              git checkout -f main
+              git_branch="bump-${cask_name}-${latest_version}"
+              git branch -D "$git_branch" 2>/dev/null || true
               
-              # 删除远程可能存在的同名分支
+              # 检查远程是否存在同名分支
               git fetch origin
-              if git ls-remote --heads origin "${branch_name}" | grep -q "${branch_name}"; then
-                echo "远程分支 ${branch_name} 已存在，尝试删除..."
-                git push origin --delete "${branch_name}" || true
+              if git ls-remote --heads origin refs/heads/"$git_branch" | grep -q "$git_branch"; then
+                # 删除远程分支
+                git push origin --delete "$git_branch" || true
+                # 确保本地分支已删除
+                git branch -D "$git_branch" 2>/dev/null || true
               fi
               
-              # 使用 brew bump-cask-pr 命令创建更新 PR，添加 --no-fork 参数
-              pr_output=$(HOMEBREW_BUMP_CASK_PR_BRANCH="${branch_name}" brew bump-cask-pr \
-                --no-browse \
-                --no-audit \
-                --no-style \
-                --no-fork \
-                --message="由自动更新工作流提交" \
-                --version="$latest_version" \
-                "$cask_name")
+              # 手动更新版本号
+              cask_file_path="Casks/${cask_name}.rb"
+              echo "更新 $cask_file_path 中的版本号从 $curr_version 到 $latest_version"
               
-              # 提取 PR 编号 - 修改匹配模式以适应不同的输出格式
-              pr_number=$(echo "$pr_output" | grep -o 'https://github.com/[^ ]*/pull/[0-9]\+' | grep -o '[0-9]\+$' || 
-                        echo "$pr_output" | grep -o 'Created pull request.*#[0-9]\+' | grep -o '#[0-9]\+' | tr -d '#' || 
-                        echo "")
+              # 创建新分支
+              git checkout -b "$git_branch"
               
-              if [ -n "$pr_number" ]; then
-                echo "$cask_name: $curr_version -> $latest_version (PR #$pr_number)" >> updated_casks.txt
+              # 修改版本号
+              sed -i '' "s/version \"$curr_version\"/version \"$latest_version\"/" "$cask_file_path"
+              
+              # 提交更改
+              git add "$cask_file_path"
+              git commit -m "${cask_name}: 更新到 ${latest_version}"
+              
+              # 推送到远程
+              if git push -f origin "$git_branch"; then
+                echo "成功推送分支 $git_branch"
                 
-                # 直接自动合并 PR
-                echo "自动合并 PR #$pr_number..."
-                gh pr merge "$pr_number" --merge --auto --delete-branch
+                # 创建 PR
+                pr_body="由自动更新工作流提交的版本更新。\n\n更新 ${cask_name} 从 ${curr_version} 到 ${latest_version}"
+                pr_url=$(gh pr create --title "${cask_name}: 更新到 ${latest_version}" --body "$pr_body" --base main --head "$git_branch")
+                
+                if [ -n "$pr_url" ]; then
+                  pr_number=$(echo "$pr_url" | grep -o '[0-9]\+$' || echo "")
+                  
+                  if [ -n "$pr_number" ]; then
+                    echo "$cask_name: $curr_version -> $latest_version (PR #$pr_number)" >> updated_casks.txt
+                    
+                    # 直接自动合并 PR
+                    echo "自动合并 PR #$pr_number..."
+                    gh pr merge "$pr_number" --merge --auto --delete-branch
+                  else
+                    echo "无法从 PR URL 提取 PR 编号: $pr_url"
+                  fi
+                else
+                  echo "创建 PR 失败"
+                fi
               else
-                echo "创建 PR 失败，输出: $pr_output"
+                echo "推送分支 $git_branch 失败"
               fi
+              
+              # 切回主分支
+              git checkout main
             else
               echo "$cask_name 已是最新版本 ($curr_version)"
             fi
