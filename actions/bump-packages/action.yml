@@ -19,7 +19,7 @@ inputs:
   fork:
     description: Use a fork when opening a PR
     required: false
-    default: ${{ github.repository_owner != 'Homebrew' }}
+    default: ${{ github.repository_owner != 'zhiyue' }}
 runs:
   using: composite
   steps:
@@ -47,7 +47,13 @@ runs:
           NO_FORK="--no-fork"
         fi
         IFS=" " read -r -a casks <<<"${INPUT_CASKS}"
-        brew bump $NO_FORK --open-pr --casks "${casks[@]}"
+        echo "调试信息 - INPUT_CASKS 原始内容: ${INPUT_CASKS}"
+        echo "调试信息 - 解析后的 casks 数组:"
+        for cask in "${casks[@]}"; do
+          echo "  - $cask"
+        done
+        echo "调试信息 - 即将执行的命令: brew bump $NO_FORK --open-pr --casks \"${casks[@]}\""
+        brew bump $NO_FORK --open-pr --casks "${casks[@]}" --verbose
       shell: bash
       if: inputs.casks != ''
       env:
