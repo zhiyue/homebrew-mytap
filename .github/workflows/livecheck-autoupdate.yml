@@ -84,13 +84,20 @@ jobs:
                 gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${branch_name}" || true
               fi
               
+              # 创建更详细的提交消息
+              commit_message="【自动更新】${cask_name} ${curr_version} → ${latest_version}
+
+* 更新时间: $(date '+%Y-%m-%d %H:%M:%S')
+* 自动检测到新版本
+* 由 homebrew-livecheck-action 自动创建"
+
               # 使用 brew bump-cask-pr 命令创建更新 PR，添加 --no-fork 参数
               pr_output=$(HOMEBREW_BUMP_CASK_PR_BRANCH="${branch_name}" brew bump-cask-pr \
                 --no-browse \
                 --no-audit \
                 --no-style \
                 --no-fork \
-                --message="由自动更新工作流提交" \
+                --message="$commit_message" \
                 --version="$latest_version" \
                 "${GITHUB_REPOSITORY}/${cask_name}")
               

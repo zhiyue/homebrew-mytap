@@ -1,0 +1,57 @@
+name: Bump casks on schedule or request
+
+on:
+  workflow_dispatch:
+    inputs:
+      casks:
+        description: Custom list of casks to livecheck and bump if outdated
+        required: false
+  schedule:
+    # Every 3 hours 23 minutes past the hour
+    - cron: "23 */3 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  autobump:
+    if: github.repository == 'zhiyue/homebrew-mytap'
+    runs-on: macos-latest
+    steps:
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+        with:
+          core: false
+          cask: true
+          test-bot: false
+
+      - name: Configure Git user
+        uses: Homebrew/actions/git-user-config@master
+        with:
+          username: ${{ (github.event_name == 'workflow_dispatch' && github.actor) || 'BrewTestBot' }}
+
+      - name: Get list of autobump casks
+        id: autobump
+        run: |
+          REPO="${{ github.repository }}"
+          CASKS=$(xargs < "$(brew --repo $REPO)"/.github/autobump.txt)
+          PREFIXED_CASKS=""
+          for cask in $CASKS; do
+            if [ -n "$PREFIXED_CASKS" ]; then
+              PREFIXED_CASKS="$PREFIXED_CASKS $REPO/$cask"
+            else
+              PREFIXED_CASKS="$REPO/$cask"
+            fi
+          done
+          echo "autobump_list=$PREFIXED_CASKS" >> "$GITHUB_OUTPUT"
+
+      - name: Bump casks
+        uses: Homebrew/actions/bump-packages@master
+        continue-on-error: true
+        with:
+          token: ${{ secrets.HOMEBREW_CASK_REPO_WORKFLOW_TOKEN || github.token }}
+          fork: false
+          casks: ${{ github.event.inputs.casks || steps.autobump.outputs.autobump_list }}
+        env:
+          HOMEBREW_TEST_BOT_AUTOBUMP: 1
