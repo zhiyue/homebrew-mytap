@@ -85,11 +85,7 @@ jobs:
               fi
               
               # 创建更详细的提交消息
-              commit_message="【自动更新】${cask_name} ${curr_version} → ${latest_version}
-
-* 更新时间: $(date '+%Y-%m-%d %H:%M:%S')
-* 自动检测到新版本
-* 由 homebrew-livecheck-action 自动创建"
+              commit_message="【自动更新】${cask_name} ${curr_version} → ${latest_version}"
 
               # 使用 brew bump-cask-pr 命令创建更新 PR，添加 --no-fork 参数
               pr_output=$(HOMEBREW_BUMP_CASK_PR_BRANCH="${branch_name}" brew bump-cask-pr \
@@ -105,7 +101,7 @@ jobs:
               pr_number=$(echo "$pr_output" | grep -o 'https://github.com/[^ ]*/pull/[0-9]\+' | grep -o '[0-9]\+$' || 
                         echo "$pr_output" | grep -o 'Created pull request.*#[0-9]\+' | grep -o '#[0-9]\+' | tr -d '#' || 
                         echo "")
-              
+
               if [ -n "$pr_number" ]; then
                 echo "$cask_name: $curr_version -> $latest_version (PR #$pr_number)" >> updated_casks.txt
                 
