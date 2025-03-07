@@ -1,5 +1,6 @@
 cask "synergy3" do
   arch arm: "arm64", intel: "x64"
+
   version "3.2.1"
   sha256 arm:   "e1dd69fb158235c42b4cd39c41351d3107bd8d918bb80ecd4d4214b4671102bd",
          intel: "bf4de22746c1544e9893fb97772f008b99c6bb085cb64614fc749ef17b4b5b37"
