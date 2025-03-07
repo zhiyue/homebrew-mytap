@@ -66,8 +66,10 @@ jobs:
           PR_URL=$(echo "$OUTPUT" | grep -o 'https://github.com/zhiyue/homebrew-mytap/pull/[0-9]*')
           PR_NUMBER=$(echo "$PR_URL" | grep -o '[0-9]*$')
           
-          # 从输出中提取分支名称
-          BRANCH_NAME=$(echo "$OUTPUT" | grep -o 'bump-[^[:space:]]*')
+          # 从输出中提取分支名称 - 改进正则表达式以避免捕获额外字符
+          BRANCH_NAME=$(echo "$OUTPUT" | grep -o 'bump-[a-zA-Z0-9.-]*' | head -1 | tr -d "'" | tr -d '"')
+          
+          echo "调试 - 提取的分支名称: \"$BRANCH_NAME\""
           
           # 如果成功创建了 PR，设置输出变量
           if [ -n "$PR_NUMBER" ] && [ -n "$BRANCH_NAME" ]; then
