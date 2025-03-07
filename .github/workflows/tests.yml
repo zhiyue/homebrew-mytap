@@ -9,6 +9,15 @@ on:
   pull_request:
     paths:
       - 'Casks/**'
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: '需要测试的PR编号'
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   test-bot:
@@ -113,3 +122,128 @@ jobs:
             echo "Uninstalling $cask..."
             brew uninstall --cask "$cask"
           done
+
+      - name: Test changed Casks (Workflow Dispatch)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number != ''
+        run: |
+          PR_NUMBER="${{ github.event.inputs.pr_number }}"
+          echo "Testing PR #$PR_NUMBER"
+          
+          # 获取PR信息
+          PR_INFO=$(gh pr view $PR_NUMBER --json headRefName,files)
+          
+          # 提取分支名称
+          BRANCH_NAME=$(echo "$PR_INFO" | jq -r '.headRefName')
+          echo "PR branch: $BRANCH_NAME"
+          
+          # 获取变更的文件
+          CHANGED_FILES=$(echo "$PR_INFO" | jq -r '.files[].path' | grep '^Casks/.*\.rb$' || true)
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No Cask files changed in this PR."
+            exit 0
+          fi
+          
+          echo "Changed Cask files:"
+          echo "$CHANGED_FILES"
+          
+          # 检出PR的分支
+          git fetch origin pull/$PR_NUMBER/head:$BRANCH_NAME
+          git checkout $BRANCH_NAME
+          
+          # 对每个修改的cask文件执行测试
+          for file in $CHANGED_FILES; do
+            cask=$(basename "$file" .rb)
+            echo "===== Testing Cask: $cask ====="
+            
+            # 审计cask
+            echo "Auditing $cask..."
+            brew audit --cask --online "$cask"
+            
+            # 检查代码风格
+            echo "Running style check for $cask..."
+            brew style --fix --cask "$cask" || true
+            
+            # 安装cask
+            echo "Installing $cask..."
+            brew install --cask "$cask"
+            
+            # 卸载cask
+            echo "Uninstalling $cask..."
+            brew uninstall --cask "$cask"
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  auto-merge:
+    needs: test-bot
+    if: >
+      (github.event_name == 'pull_request' || github.event.inputs.pr_number != '') &&
+      !contains(github.event.pull_request.labels.*.name, 'no-auto-merge')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Auto-merge PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            let prNumber;
+            let branchName;
+            
+            if ('${{ github.event_name }}' === 'pull_request') {
+              prNumber = context.payload.pull_request.number;
+              branchName = context.payload.pull_request.head.ref;
+            } else if ('${{ github.event.inputs.pr_number }}' !== '') {
+              prNumber = parseInt('${{ github.event.inputs.pr_number }}');
+              
+              // 获取PR信息
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber
+              });
+              
+              branchName = pr.head.ref;
+            }
+            
+            if (!prNumber) {
+              console.log('No PR number found, skipping auto-merge');
+              return;
+            }
+            
+            console.log(`Attempting to merge PR #${prNumber}, branch: ${branchName}`);
+            
+            try {
+              // 检查PR是否来自autobump
+              const isAutobump = branchName.startsWith('bump-');
+              
+              if (isAutobump) {
+                console.log('This is an autobump PR, proceeding with auto-merge');
+                
+                // 合并PR
+                await github.rest.pulls.merge({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: prNumber,
+                  merge_method: 'squash'
+                });
+                
+                console.log('PR merged successfully!');
+                
+                // 删除分支
+                await github.rest.git.deleteRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: `heads/${branchName}`
+                });
+                
+                console.log('Branch deleted successfully!');
+              } else {
+                console.log('This is not an autobump PR, skipping auto-merge');
+              }
+            } catch (error) {
+              console.error('Error during auto-merge process:', error);
+            }

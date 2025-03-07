@@ -14,11 +14,15 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  actions: write
 
 jobs:
   autobump:
     if: github.repository == 'zhiyue/homebrew-mytap'
     runs-on: macos-latest
+    outputs:
+      pr_number: ${{ steps.bump-casks.outputs.pr_number }}
+      pr_branch: ${{ steps.bump-casks.outputs.pr_branch }}
     steps:
       - name: Set up Homebrew
         id: set-up-homebrew
@@ -52,11 +56,48 @@ jobs:
     #       echo "调试信息 - 最终设置的 autobump_list: $PREFIXED_CASKS"
 
       - name: Bump casks
+        id: bump-casks
         run: |
-          brew bump --full-name --no-fork --tap "zhiyue/homebrew-mytap" --open-pr --cask --debug
+          # 运行 brew bump 命令并捕获输出
+          OUTPUT=$(brew bump --full-name --no-fork --tap "zhiyue/homebrew-mytap" --open-pr --cask --debug)
+          echo "$OUTPUT"
+          
+          # 从输出中提取 PR 编号
+          PR_URL=$(echo "$OUTPUT" | grep -o 'https://github.com/zhiyue/homebrew-mytap/pull/[0-9]*')
+          PR_NUMBER=$(echo "$PR_URL" | grep -o '[0-9]*$')
+          
+          # 从输出中提取分支名称
+          BRANCH_NAME=$(echo "$OUTPUT" | grep -o 'bump-[^[:space:]]*')
+          
+          # 如果成功创建了 PR，设置输出变量
+          if [ -n "$PR_NUMBER" ] && [ -n "$BRANCH_NAME" ]; then
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "pr_branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+            echo "PR created: #$PR_NUMBER on branch $BRANCH_NAME"
+          else
+            echo "No PR was created or couldn't extract PR information"
+          fi
         env:
           HOMEBREW_TEST_BOT_AUTOBUMP: 1
           HOMEBREW_GITHUB_PACKAGES_USER: "zhiyue"
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_CASK_REPO_WORKFLOW_TOKEN || github.token }}
           HOMEBREW_DEVELOPER: "1"
-      
+          
+      - name: 触发测试工作流
+        if: steps.bump-casks.outputs.pr_number != ''
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            console.log('触发测试工作流 tests.yml，测试PR #${{ steps.bump-casks.outputs.pr_number }}');
+            
+            // 触发 tests.yml 工作流
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'tests.yml',
+              ref: 'main',
+              inputs: {
+                pr_number: '${{ steps.bump-casks.outputs.pr_number }}'
+              }
+            });
