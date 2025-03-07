@@ -43,19 +43,35 @@ jobs:
           # 创建一个临时文件来存储更新的 cask 名称
           touch updated_casks.txt
           
+          # 一次性获取所有 cask 的更新信息
+          echo "运行命令: brew livecheck --tap=\"$GITHUB_REPOSITORY\" --json"
+          all_casks_output=$(brew livecheck --tap="$GITHUB_REPOSITORY" --json)
+          
+          # 输出原始结果用于调试
+          echo "原始 livecheck 输出:"
+          echo "$all_casks_output"
+          
           # 遍历所有 cask 文件
           for cask_file in $CASKS; do
             cask_name=$(basename "$cask_file" .rb)
             echo "检查 $cask_name 的更新..."
             
-            # 运行 livecheck 检查更新
-            output=$(brew livecheck --tap="$GITHUB_REPOSITORY" --cask "$cask_name" --json)
+            # 从全局结果中提取当前 cask 的信息
+            cask_info=$(echo "$all_casks_output" | jq -r ".[] | select(.cask == \"$cask_name\")")
             
-            # 解析 JSON 输出
-            curr_version=$(echo "$output" | jq -r ".[0].version.current")
-            latest_version=$(echo "$output" | jq -r ".[0].version.latest")
+            if [ -z "$cask_info" ]; then
+              echo "警告：在 livecheck 结果中找不到 $cask_name 的信息，跳过此 cask"
+              continue
+            fi
             
-            if [ "$curr_version" != "$latest_version" ] && [ "$latest_version" != "null" ]; then
+            # 解析版本信息
+            curr_version=$(echo "$cask_info" | jq -r ".version.current")
+            latest_version=$(echo "$cask_info" | jq -r ".version.latest")
+            is_outdated=$(echo "$cask_info" | jq -r ".version.outdated")
+            
+            echo "当前版本: $curr_version, 最新版本: $latest_version, 是否过时: $is_outdated"
+            
+            if [ "$is_outdated" = "true" ]; then
               echo "$cask_name 可更新: $curr_version -> $latest_version"
               
               # 使用唯一的分支名，包含时间戳
