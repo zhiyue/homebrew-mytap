@@ -52,11 +52,12 @@ jobs:
             if [ "$curr_version" != "$latest_version" ] && [ "$latest_version" != "null" ]; then
               echo "$cask_name 可更新: $curr_version -> $latest_version"
               
-              # 使用 brew bump-cask-pr 命令创建更新 PR
+              # 使用 brew bump-cask-pr 命令创建更新 PR，添加 --no-fork 参数
               pr_output=$(brew bump-cask-pr \
                 --no-browse \
                 --no-audit \
                 --no-style \
+                --no-fork \
                 --message="由自动更新工作流提交" \
                 --version="$latest_version" \
                 "$cask_name")
