@@ -20,6 +20,12 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN || github.token }}
 
+      - name: 配置 Git 远程仓库 URL
+        run: |
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+        env:
+          GITHUB_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN || github.token }}
+
       - name: 设置 Homebrew
         uses: Homebrew/actions/setup-homebrew@master
 
