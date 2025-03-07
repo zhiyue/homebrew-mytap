@@ -1,0 +1,107 @@
+name: Cask Livecheck 自动更新
+
+on:
+  schedule:
+    # 每天凌晨 2 点运行 (UTC 时间，相当于北京时间 10 点)
+    - cron: '0 2 * * *'
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  livecheck-and-update:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: 设置 Git
+        uses: Homebrew/actions/git-user-config@master
+
+      - name: 列出所有 Cask
+        id: list-casks
+        run: |
+          echo "CASKS=$(ls -1 Casks/*.rb | xargs)" >> $GITHUB_ENV
+
+      - name: 检查更新并更新版本
+        id: update-casks
+        run: |
+          # 创建一个临时文件来存储更新的 cask 名称和PR编号
+          touch updated_casks.txt
+          touch pr_numbers.txt
+          
+          # 遍历所有 cask 文件
+          for cask_file in $CASKS; do
+            cask_name=$(basename "$cask_file" .rb)
+            echo "检查 $cask_name 的更新..."
+            
+            # 运行 livecheck 检查更新
+            output=$(brew livecheck --tap="$GITHUB_REPOSITORY" --cask "$cask_name" --json)
+            
+            # 解析 JSON 输出
+            curr_version=$(echo "$output" | jq -r ".[0].version.current")
+            latest_version=$(echo "$output" | jq -r ".[0].version.latest")
+            
+            if [ "$curr_version" != "$latest_version" ] && [ "$latest_version" != "null" ]; then
+              echo "$cask_name 可更新: $curr_version -> $latest_version"
+              
+              # 使用 brew bump-cask-pr 命令创建更新 PR
+              pr_output=$(brew bump-cask-pr \
+                --no-browse \
+                --no-audit \
+                --no-style \
+                --message="由自动更新工作流提交" \
+                --version="$latest_version" \
+                "$cask_name" | tee /dev/tty)
+              
+              # 提取 PR 编号
+              pr_number=$(echo "$pr_output" | grep -o 'https://github.com/.*\/pull\/[0-9]\+' | grep -o '[0-9]\+$' || echo "")
+              
+              if [ -n "$pr_number" ]; then
+                echo "$cask_name" >> updated_casks.txt
+                echo "$pr_number" >> pr_numbers.txt
+                
+                # 直接自动合并 PR
+                echo "自动合并 PR #$pr_number..."
+                gh pr merge "$pr_number" --merge --auto --delete-branch
+              fi
+            else
+              echo "$cask_name 已是最新版本 ($curr_version)"
+            fi
+          done
+          
+          # 检查是否有任何 cask 被更新
+          if [ -s updated_casks.txt ]; then
+            echo "UPDATED=true" >> $GITHUB_ENV
+            echo "UPDATED_CASKS=$(cat updated_casks.txt | tr '\n' ' ')" >> $GITHUB_ENV
+            echo "PR_NUMBERS=$(cat pr_numbers.txt | tr '\n' ' ')" >> $GITHUB_ENV
+          else
+            echo "UPDATED=false" >> $GITHUB_ENV
+          fi
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+
+      - name: 创建摘要
+        if: env.UPDATED == 'true'
+        run: |
+          echo "### Cask 更新摘要 :beer:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "已为以下 cask 创建并尝试自动合并更新 PR：" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # 将 UPDATED_CASKS 和 PR_NUMBERS 转换为数组
+          IFS=' ' read -r -a casks <<< "$UPDATED_CASKS"
+          IFS=' ' read -r -a prs <<< "$PR_NUMBERS"
+          
+          for i in "${!casks[@]}"; do
+            cask="${casks[$i]}"
+            pr="${prs[$i]}"
+            echo "- $cask (PR #$pr)" >> $GITHUB_STEP_SUMMARY
+          done
+        env:
+          GH_TOKEN: ${{ github.token }}
