@@ -24,6 +24,7 @@ cask "synergy3" do
   auto_updates true
   depends_on macos: ">= :catalina"
   conflicts_with cask: "synergy"
+  
 
   app "Synergy.app"
 
