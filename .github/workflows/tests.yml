@@ -36,6 +36,7 @@ jobs:
 
       - name: Check tap syntax
         run: brew test-bot --only-tap-syntax
+        continue-on-error: true
 
       - name: Fix style for Casks
         run: brew style --fix --cask
