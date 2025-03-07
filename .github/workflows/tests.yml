@@ -52,7 +52,7 @@ jobs:
           echo "$CHANGED_FILES"
           
           # 对每个修改的cask文件执行测试
-          for file in "$CHANGED_FILES"; do
+          for file in $CHANGED_FILES; do
             cask=$(basename "$file" .rb)
             echo "===== Testing Cask: $cask ====="
             
@@ -88,7 +88,7 @@ jobs:
           echo "$CHANGED_FILES"
           
           # 对每个修改的cask文件执行测试
-          for file in "$CHANGED_FILES"; do
+          for file in $CHANGED_FILES; do
             cask=$(basename "$file" .rb)
             echo "===== Testing Cask: $cask ====="
             
