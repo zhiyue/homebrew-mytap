@@ -33,23 +33,23 @@ jobs:
         with:
           username: ${{ (github.event_name == 'workflow_dispatch' && github.actor) || 'BrewTestBot' }}
 
-      - name: Get list of autobump casks
-        id: autobump
-        run: |
-          REPO="zhiyue/mytap"
-          CASKS=$(xargs < "$(brew --repo $REPO)"/.github/autobump.txt)
-          PREFIXED_CASKS=""
-          for cask in $CASKS; do
-            if [ -n "$PREFIXED_CASKS" ]; then
-              PREFIXED_CASKS="$PREFIXED_CASKS $REPO/$cask"
-            else
-              PREFIXED_CASKS="$REPO/$cask"
-            fi
-          done
-          echo "调试信息 - 原始 CASKS: $CASKS"
-          echo "调试信息 - 带前缀的 PREFIXED_CASKS: $PREFIXED_CASKS"
-          echo "autobump_list=$PREFIXED_CASKS" >> "$GITHUB_OUTPUT"
-          echo "调试信息 - 最终设置的 autobump_list: $PREFIXED_CASKS"
+    #   - name: Get list of autobump casks
+    #     id: autobump
+    #     run: |
+    #       REPO="zhiyue/mytap"
+    #       CASKS=$(xargs < "$(brew --repo $REPO)"/.github/autobump.txt)
+    #       PREFIXED_CASKS=""
+    #       for cask in $CASKS; do
+    #         if [ -n "$PREFIXED_CASKS" ]; then
+    #           PREFIXED_CASKS="$PREFIXED_CASKS $REPO/$cask"
+    #         else
+    #           PREFIXED_CASKS="$REPO/$cask"
+    #         fi
+    #       done
+    #       echo "调试信息 - 原始 CASKS: $CASKS"
+    #       echo "调试信息 - 带前缀的 PREFIXED_CASKS: $PREFIXED_CASKS"
+    #       echo "autobump_list=$PREFIXED_CASKS" >> "$GITHUB_OUTPUT"
+    #       echo "调试信息 - 最终设置的 autobump_list: $PREFIXED_CASKS"
 
       - name: Bump casks
         run: |
