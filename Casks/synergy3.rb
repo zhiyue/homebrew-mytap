@@ -27,12 +27,12 @@ cask "synergy3" do
 
   app "Synergy.app"
 
-  uninstall delete: [
-    "/Applications/Synergy.app",
-    "/Library/PrivilegedHelperTools/synergy-core",
-  ],
-  launchctl: "com.symless.synergy3",
-  quit: "com.symless.synergy"
+  uninstall quit:      "com.symless.synergy",
+            launchctl: "com.symless.synergy3",
+            delete:    [
+              "/Applications/Synergy.app",
+              "/Library/PrivilegedHelperTools/synergy-core",
+            ]
 
   zap trash: [
     "~/Library/Application Support/CrashReporter/synergy_*.plist",

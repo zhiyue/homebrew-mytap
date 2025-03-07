@@ -41,7 +41,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           # 获取PR中变更的文件
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep '^Casks/.*\.rb$' || true)
+          CHANGED_FILES=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | grep '^Casks/.*\.rb$' || true)
           
           if [ -z "$CHANGED_FILES" ]; then
             echo "No Cask files changed in this PR."
@@ -52,8 +52,8 @@ jobs:
           echo "$CHANGED_FILES"
           
           # 对每个修改的cask文件执行测试
-          for file in $CHANGED_FILES; do
-            cask=$(basename $file .rb)
+          for file in "$CHANGED_FILES"; do
+            cask=$(basename "$file" .rb)
             echo "===== Testing Cask: $cask ====="
             
             # 审计cask
@@ -77,7 +77,7 @@ jobs:
         if: github.event_name == 'push'
         run: |
           # 获取Push中变更的文件
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep '^Casks/.*\.rb$' || true)
+          CHANGED_FILES=$(git diff --name-only "${{ github.event.before }}" "${{ github.event.after }}" | grep '^Casks/.*\.rb$' || true)
           
           if [ -z "$CHANGED_FILES" ]; then
             echo "No Cask files changed in this push."
@@ -88,8 +88,8 @@ jobs:
           echo "$CHANGED_FILES"
           
           # 对每个修改的cask文件执行测试
-          for file in $CHANGED_FILES; do
-            cask=$(basename $file .rb)
+          for file in "$CHANGED_FILES"; do
+            cask=$(basename "$file" .rb)
             echo "===== Testing Cask: $cask ====="
             
             # 审计cask
