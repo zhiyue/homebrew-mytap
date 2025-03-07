@@ -11,7 +11,7 @@ on:
     - cron: "23 */3 * * *"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   autobump:
