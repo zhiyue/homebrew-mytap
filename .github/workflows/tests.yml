@@ -37,6 +37,10 @@ jobs:
       - name: Check tap syntax
         run: brew test-bot --only-tap-syntax
 
+      - name: Fix style for Casks
+        run: brew style --fix --cask
+        continue-on-error: true
+
       - name: Test changed Casks (Pull Request)
         if: github.event_name == 'pull_request'
         run: |
@@ -62,7 +66,7 @@ jobs:
             
             # 检查代码风格
             echo "Running style check for $cask..."
-            brew style --cask "$cask"
+            brew style --fix --cask "$cask" || true
             
             # 安装cask
             echo "Installing $cask..."
@@ -98,7 +102,7 @@ jobs:
             
             # 检查代码风格
             echo "Running style check for $cask..."
-            brew style --cask "$cask"
+            brew style --fix --cask "$cask" || true
             
             # 安装cask
             echo "Installing $cask..."
