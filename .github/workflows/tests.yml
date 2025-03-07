@@ -195,19 +195,19 @@ jobs:
             
             # 审计cask
             echo "Auditing $cask..."
-            brew audit --cask --online "$cask"
+            brew audit --tap "${{ github.repository }}" --cask --online "$cask"
             
             # 检查代码风格
             echo "Running style check for $cask..."
-            brew style --fix --cask "$cask" || true
+            brew style --tap "${{ github.repository }}" --fix --cask "$cask" || true
             
             # 安装cask
             echo "Installing $cask..."
-            brew install --cask "$cask"
+            brew install --tap "${{ github.repository }}" --cask "$cask"
             
             # 卸载cask
             echo "Uninstalling $cask..."
-            brew uninstall --cask "$cask"
+            brew uninstall --tap "${{ github.repository }}" --cask "$cask"
           done
 
   auto-merge:
