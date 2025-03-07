@@ -36,7 +36,7 @@ jobs:
       - name: Get list of autobump casks
         id: autobump
         run: |
-          REPO="${{ github.repository }}"
+          REPO="zhiyue/mytab"
           CASKS=$(xargs < "$(brew --repo $REPO)"/.github/autobump.txt)
           PREFIXED_CASKS=""
           for cask in $CASKS; do
