@@ -1,16 +1,20 @@
-name: brew test-bot
+name: brew test-bot for Casks
 
 on:
   push:
     branches:
       - main
+    paths:
+      - 'Casks/**'
   pull_request:
+    paths:
+      - 'Casks/**'
 
 jobs:
   test-bot:
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-13, macos-15]
+        os: [macos-13, macos-15]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Set up Homebrew
@@ -33,13 +37,74 @@ jobs:
       - name: Check tap syntax
         run: brew test-bot --only-tap-syntax
 
-      - name: Run formulae tests
-        run: brew test-bot --only-formulae
+      - name: Test changed Casks (Pull Request)
         if: github.event_name == 'pull_request'
+        run: |
+          # 获取PR中变更的文件
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep '^Casks/.*\.rb$' || true)
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No Cask files changed in this PR."
+            exit 0
+          fi
+          
+          echo "Changed Cask files:"
+          echo "$CHANGED_FILES"
+          
+          # 对每个修改的cask文件执行测试
+          for file in $CHANGED_FILES; do
+            cask=$(basename $file .rb)
+            echo "===== Testing Cask: $cask ====="
+            
+            # 审计cask
+            echo "Auditing $cask..."
+            brew audit --cask --online "$cask"
+            
+            # 检查代码风格
+            echo "Running style check for $cask..."
+            brew style --cask "$cask"
+            
+            # 安装cask
+            echo "Installing $cask..."
+            brew install --cask "$cask"
+            
+            # 卸载cask
+            echo "Uninstalling $cask..."
+            brew uninstall --cask "$cask"
+          done
 
-      - name: Upload bottles as artifact
-        if: always() && github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: bottles_${{ matrix.os }}
-          path: '*.bottle.*'
+      - name: Test changed Casks (Push)
+        if: github.event_name == 'push'
+        run: |
+          # 获取Push中变更的文件
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep '^Casks/.*\.rb$' || true)
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No Cask files changed in this push."
+            exit 0
+          fi
+          
+          echo "Changed Cask files:"
+          echo "$CHANGED_FILES"
+          
+          # 对每个修改的cask文件执行测试
+          for file in $CHANGED_FILES; do
+            cask=$(basename $file .rb)
+            echo "===== Testing Cask: $cask ====="
+            
+            # 审计cask
+            echo "Auditing $cask..."
+            brew audit --cask --online "$cask"
+            
+            # 检查代码风格
+            echo "Running style check for $cask..."
+            brew style --cask "$cask"
+            
+            # 安装cask
+            echo "Installing $cask..."
+            brew install --cask "$cask"
+            
+            # 卸载cask
+            echo "Uninstalling $cask..."
+            brew uninstall --cask "$cask"
+          done
