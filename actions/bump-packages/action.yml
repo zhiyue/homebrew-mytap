@@ -5,6 +5,9 @@ branding:
   icon: arrow-up-circle
   color: yellow
 inputs:
+  tap:
+    description: Tap name
+    required: false
   token:
     description: GitHub token (not the default one)
     required: true
@@ -53,11 +56,12 @@ runs:
           echo "  - $cask"
         done
         echo "调试信息 - 即将执行的命令: brew bump $NO_FORK --open-pr --casks \"${casks[@]}\""
-        brew bump $NO_FORK --open-pr --casks "${casks[@]}" --verbose
+        brew bump $NO_FORK --tap "${INPUT_TAP}" --open-pr --casks "${casks[@]}" --verbose
       shell: bash
       if: inputs.casks != ''
       env:
         INPUT_CASKS: ${{ inputs.casks }}
+        INPUT_TAP: ${{ inputs.tap }}
         INPUT_FORK: ${{ inputs.fork }}
         HOMEBREW_DEVELOPER: "1"
         HOMEBREW_GITHUB_API_TOKEN: ${{ inputs.token }}

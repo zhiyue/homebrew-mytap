@@ -62,5 +62,6 @@ jobs:
           token: ${{ secrets.HOMEBREW_CASK_REPO_WORKFLOW_TOKEN || github.token }}
           fork: false
           casks: ${{ github.event.inputs.casks || steps.autobump.outputs.autobump_list }}
+          tap: ${{ github.repository || 'homebrew/cask' }}
         env:
           HOMEBREW_TEST_BOT_AUTOBUMP: 1
