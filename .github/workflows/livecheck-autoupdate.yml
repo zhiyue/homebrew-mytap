@@ -65,7 +65,7 @@ jobs:
               git fetch origin
               if git ls-remote --heads origin "${branch_name}" | grep -q "${branch_name}"; then
                 echo "远程分支 ${branch_name} 已存在，尝试删除..."
-                git push origin --delete "${branch_name}" || true
+                gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${branch_name}" || true
               fi
               
               # 使用 brew bump-cask-pr 命令创建更新 PR，添加 --no-fork 参数
