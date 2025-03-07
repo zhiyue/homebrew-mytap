@@ -54,14 +54,14 @@ jobs:
       # 如果需要切换到自定义 tap
       - name: Tap custom repository
         run: |
-          brew tap zhiyue/mytap https://github.com/zhiyue/homebrew-mytap.git
+          brew tap zhiyue/mytap https://github.com/zhiyue/homebrew-mytap
       
       # 切换到 tap 目录才能针对它进行操作
       - name: Change to tap directory
         run: |
           cd "$(brew --repository zhiyue/mytap)"
           echo "TAP_DIR=$(pwd)" >> $GITHUB_ENV
-          
+
       - name: 调试 autobump_list 输出变量
         run: |
           echo "调试 steps.autobump.outputs.autobump_list: ${{ steps.autobump.outputs.autobump_list }}"
