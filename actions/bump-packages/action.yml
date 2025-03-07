@@ -1,0 +1,57 @@
+name: Bump packages
+description: Bump (update) Homebrew outdated packages
+author: SMillerDev
+branding:
+  icon: arrow-up-circle
+  color: yellow
+inputs:
+  token:
+    description: GitHub token (not the default one)
+    required: true
+  formulae:
+    description: Formula names, space-separated
+    required: false
+    default: ''
+  casks:
+    description: Cask names, space-separated
+    required: false
+    default: ''
+  fork:
+    description: Use a fork when opening a PR
+    required: false
+    default: ${{ github.repository_owner != 'Homebrew' }}
+runs:
+  using: composite
+  steps:
+    - name: Bump formulae
+      run: |
+        if [[ "$INPUT_FORK" == "true" ]]; then
+          NO_FORK=""
+        else
+          NO_FORK="--no-fork"
+        fi
+        IFS=" " read -r -a formulae <<<"${INPUT_FORMULAE}"
+        brew bump $NO_FORK --open-pr --formulae "${formulae[@]}"
+      shell: bash
+      if: inputs.formulae != ''
+      env:
+        INPUT_FORMULAE: ${{ inputs.formulae }}
+        INPUT_FORK: ${{ inputs.fork }}
+        HOMEBREW_DEVELOPER: "1"
+        HOMEBREW_GITHUB_API_TOKEN: ${{ inputs.token }}
+    - name: Bump casks
+      run: |
+        if [[ "$INPUT_FORK" == "true" ]]; then
+          NO_FORK=""
+        else
+          NO_FORK="--no-fork"
+        fi
+        IFS=" " read -r -a casks <<<"${INPUT_CASKS}"
+        brew bump $NO_FORK --open-pr --casks "${casks[@]}"
+      shell: bash
+      if: inputs.casks != ''
+      env:
+        INPUT_CASKS: ${{ inputs.casks }}
+        INPUT_FORK: ${{ inputs.fork }}
+        HOMEBREW_DEVELOPER: "1"
+        HOMEBREW_GITHUB_API_TOKEN: ${{ inputs.token }}

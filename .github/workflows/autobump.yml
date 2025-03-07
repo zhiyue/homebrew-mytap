@@ -56,7 +56,7 @@ jobs:
           echo "调试 steps.autobump.outputs.autobump_list: ${{ steps.autobump.outputs.autobump_list }}"
 
       - name: Bump casks
-        uses: Homebrew/actions/bump-packages@master
+        uses: zhiyue/homebrew-mytap/actions/bump-packages@master
         continue-on-error: true
         with:
           token: ${{ secrets.HOMEBREW_CASK_REPO_WORKFLOW_TOKEN || github.token }}
