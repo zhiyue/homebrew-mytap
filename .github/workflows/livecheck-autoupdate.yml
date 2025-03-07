@@ -92,7 +92,7 @@ jobs:
                 --no-fork \
                 --message="由自动更新工作流提交" \
                 --version="$latest_version" \
-                "$cask_name")
+                "${GITHUB_REPOSITORY}/${cask_name}")
               
               # 提取 PR 编号 - 修改匹配模式以适应不同的输出格式
               pr_number=$(echo "$pr_output" | grep -o 'https://github.com/[^ ]*/pull/[0-9]\+' | grep -o '[0-9]\+$' || 
