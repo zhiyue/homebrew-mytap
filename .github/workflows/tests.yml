@@ -65,24 +65,31 @@ jobs:
           echo "Changed Cask files:"
           echo "$CHANGED_FILES"
           
+          # 获取仓库根目录
+          REPO_ROOT=$(git rev-parse --show-toplevel)
+          
           # 对每个修改的cask文件执行测试
           for file in $CHANGED_FILES; do
             cask=$(basename "$file" .rb)
             echo "===== Testing Cask: $cask ====="
             
-            # 审计cask
-            echo "Auditing $cask..."
-            brew audit --cask --online "$cask"
+            # 构建完整的文件路径
+            FULL_FILE_PATH="$REPO_ROOT/$file"
+            echo "Full file path: $FULL_FILE_PATH"
             
-            # 检查代码风格
-            echo "Running style check for $cask..."
-            brew style --fix --cask "$cask" || true
+            # 审计cask - 使用完整的文件路径
+            echo "Auditing $file..."
+            brew audit --cask --online "$FULL_FILE_PATH"
             
-            # 安装cask
-            echo "Installing $cask..."
-            brew install --cask "$cask"
+            # 检查代码风格 - 使用完整的文件路径
+            echo "Running style check for $file..."
+            brew style --fix "$FULL_FILE_PATH"
             
-            # 卸载cask
+            # 安装cask - 使用完整的文件路径
+            echo "Installing $file..."
+            brew install --cask "$FULL_FILE_PATH"
+            
+            # 卸载cask (卸载时需要使用cask名称)
             echo "Uninstalling $cask..."
             brew uninstall --cask "$cask"
           done
@@ -101,24 +108,31 @@ jobs:
           echo "Changed Cask files:"
           echo "$CHANGED_FILES"
           
+          # 获取仓库根目录
+          REPO_ROOT=$(git rev-parse --show-toplevel)
+          
           # 对每个修改的cask文件执行测试
           for file in $CHANGED_FILES; do
             cask=$(basename "$file" .rb)
             echo "===== Testing Cask: $cask ====="
             
-            # 审计cask
-            echo "Auditing $cask..."
-            brew audit --cask --online "$cask"
+            # 构建完整的文件路径
+            FULL_FILE_PATH="$REPO_ROOT/$file"
+            echo "Full file path: $FULL_FILE_PATH"
             
-            # 检查代码风格
-            echo "Running style check for $cask..."
-            brew style --fix --cask "$cask" || true
+            # 审计cask - 使用完整的文件路径
+            echo "Auditing $file..."
+            brew audit --cask --online "$FULL_FILE_PATH"
             
-            # 安装cask
-            echo "Installing $cask..."
-            brew install --cask "$cask"
+            # 检查代码风格 - 使用完整的文件路径
+            echo "Running style check for $file..."
+            brew style --fix "$FULL_FILE_PATH"
             
-            # 卸载cask
+            # 安装cask - 使用完整的文件路径
+            echo "Installing $file..."
+            brew install --cask "$FULL_FILE_PATH"
+            
+            # 卸载cask (卸载时需要使用cask名称)
             echo "Uninstalling $cask..."
             brew uninstall --cask "$cask"
           done
@@ -188,26 +202,33 @@ jobs:
           git fetch origin pull/$PR_NUMBER/head:$BRANCH_NAME
           git checkout $BRANCH_NAME
           
+          # 获取仓库根目录
+          REPO_ROOT=$(git rev-parse --show-toplevel)
+          
           # 对每个修改的cask文件执行测试
           for file in $CHANGED_FILES; do
             cask=$(basename "$file" .rb)
             echo "===== Testing Cask: $cask ====="
             
-            # 审计cask
-            echo "Auditing $cask..."
-            brew audit --tap "${{ github.repository }}" --cask --online "$cask"
+            # 构建完整的文件路径
+            FULL_FILE_PATH="$REPO_ROOT/$file"
+            echo "Full file path: $FULL_FILE_PATH"
             
-            # 检查代码风格
-            echo "Running style check for $cask..."
-            brew style --tap "${{ github.repository }}" --fix --cask "$cask" || true
+            # 审计cask - 使用完整的文件路径
+            echo "Auditing $file..."
+            brew audit --cask --online "$FULL_FILE_PATH"
             
-            # 安装cask
-            echo "Installing $cask..."
-            brew install --tap "${{ github.repository }}" --cask "$cask"
+            # 检查代码风格 - 使用完整的文件路径
+            echo "Running style check for $file..."
+            brew style --fix "$FULL_FILE_PATH"
             
-            # 卸载cask
+            # 安装cask - 使用完整的文件路径
+            echo "Installing $file..."
+            brew install --cask "$FULL_FILE_PATH"
+            
+            # 卸载cask (卸载时需要使用cask名称)
             echo "Uninstalling $cask..."
-            brew uninstall --tap "${{ github.repository }}" --cask "$cask"
+            brew uninstall --cask "$cask"
           done
 
   auto-merge:
