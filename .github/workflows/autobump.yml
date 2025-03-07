@@ -51,6 +51,10 @@ jobs:
           echo "autobump_list=$PREFIXED_CASKS" >> "$GITHUB_OUTPUT"
           echo "调试信息 - 最终设置的 autobump_list: $PREFIXED_CASKS"
 
+      - name: 调试 autobump_list 输出变量
+        run: |
+          echo "调试 steps.autobump.outputs.autobump_list: ${{ steps.autobump.outputs.autobump_list }}"
+
       - name: Bump casks
         uses: Homebrew/actions/bump-packages@master
         continue-on-error: true
