@@ -1,7 +1,7 @@
 cask "trae" do
   arch arm: "arm64", intel: "x64"
 
-  version "1.0.8482"
+  version "1.0.8483"
   sha256 arm:   "dfdf4d991c2c4839c660bc2dad89aee1a68958b87419575500f64cbef45d2487",
          intel: "214bf9d0554dd880d2790c958f884d538fbcd39ff57d49a9522084cc6eda2a4e"
 
