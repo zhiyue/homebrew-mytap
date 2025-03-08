@@ -1,145 +1,33 @@
-name: brew test-bot for Casks
+name: 测试
 
 on:
   push:
     branches:
-      - main
+      - master
     paths:
-      - 'Casks/**'
+      - 'Casks/*.rb'
   pull_request:
     paths:
-      - 'Casks/**'
+      - 'Casks/*.rb'
   workflow_dispatch:
     inputs:
       pr_number:
         description: '需要测试的PR编号'
-        required: false
-
-permissions:
-  contents: write
-  pull-requests: write
+        required: true
+        type: string
 
 jobs:
-  test-bot:
-    strategy:
-      matrix:
-        os: [macos-15]
-    runs-on: ${{ matrix.os }}
+  # PR信息获取任务，仅在手动触发且提供PR编号时运行
+  get-pr-info:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number != ''
+    runs-on: ubuntu-latest
+    outputs:
+      branch_name: ${{ steps.parse-pr-info.outputs.branch_name }}
+      has_changes: ${{ steps.parse-pr-info.outputs.has_changes }}
+      changed_files: ${{ steps.parse-pr-info.outputs.changed_files }}
     steps:
-      - name: Set up Homebrew
-        id: set-up-homebrew
-        uses: Homebrew/actions/setup-homebrew@master
-
-      - name: Cache Homebrew Bundler RubyGems
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.set-up-homebrew.outputs.gems-path }}
-          key: ${{ matrix.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
-          restore-keys: ${{ matrix.os }}-rubygems-
-
-      - name: Cleanup before tests
-        run: brew test-bot --only-cleanup-before
-
-      - name: Setup for tests
-        run: brew test-bot --only-setup
-
-      - name: Check tap syntax
-        run: brew test-bot --only-tap-syntax
-        continue-on-error: true
-
-      - name: Fix style for Casks
-        run: brew style --fix --cask
-        continue-on-error: true
-
-      - name: Test changed Casks (Pull Request)
-        if: github.event_name == 'pull_request'
-        run: |
-          # 获取PR中变更的文件
-          CHANGED_FILES=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | grep '^Casks/.*\.rb$' || true)
-          
-          if [ -z "$CHANGED_FILES" ]; then
-            echo "No Cask files changed in this PR."
-            exit 0
-          fi
-          
-          echo "Changed Cask files:"
-          echo "$CHANGED_FILES"
-          
-          # 获取仓库根目录
-          REPO_ROOT=$(git rev-parse --show-toplevel)
-          
-          # 对每个修改的cask文件执行测试
-          for file in $CHANGED_FILES; do
-            cask=$(basename "$file" .rb)
-            echo "===== Testing Cask: $cask ====="
-            
-            # 构建完整的文件路径
-            FULL_FILE_PATH="$REPO_ROOT/$file"
-            echo "Full file path: $FULL_FILE_PATH"
-            
-            # 审计cask - 使用完整的文件路径
-            echo "Auditing $file..."
-            brew audit --cask --online "$FULL_FILE_PATH"
-            
-            # 检查代码风格 - 使用完整的文件路径
-            echo "Running style check for $file..."
-            brew style --fix "$FULL_FILE_PATH"
-            
-            # 安装cask - 使用完整的文件路径
-            echo "Installing $file..."
-            brew install --cask "$FULL_FILE_PATH"
-            
-            # 卸载cask (卸载时需要使用cask名称)
-            echo "Uninstalling $cask..."
-            brew uninstall --cask "$cask"
-          done
-
-      - name: Test changed Casks (Push)
-        if: github.event_name == 'push'
-        run: |
-          # 获取Push中变更的文件
-          CHANGED_FILES=$(git diff --name-only "${{ github.event.before }}" "${{ github.event.after }}" | grep '^Casks/.*\.rb$' || true)
-          
-          if [ -z "$CHANGED_FILES" ]; then
-            echo "No Cask files changed in this push."
-            exit 0
-          fi
-          
-          echo "Changed Cask files:"
-          echo "$CHANGED_FILES"
-          
-          # 获取仓库根目录
-          REPO_ROOT=$(git rev-parse --show-toplevel)
-          
-          # 对每个修改的cask文件执行测试
-          for file in $CHANGED_FILES; do
-            cask=$(basename "$file" .rb)
-            echo "===== Testing Cask: $cask ====="
-            
-            # 构建完整的文件路径
-            FULL_FILE_PATH="$REPO_ROOT/$file"
-            echo "Full file path: $FULL_FILE_PATH"
-            
-            # 审计cask - 使用完整的文件路径
-            echo "Auditing $file..."
-            brew audit --cask --online "$FULL_FILE_PATH"
-            
-            # 检查代码风格 - 使用完整的文件路径
-            echo "Running style check for $file..."
-            brew style --fix "$FULL_FILE_PATH"
-            
-            # 安装cask - 使用完整的文件路径
-            echo "Installing $file..."
-            brew install --cask "$FULL_FILE_PATH"
-            
-            # 卸载cask (卸载时需要使用cask名称)
-            echo "Uninstalling $cask..."
-            brew uninstall --cask "$cask"
-          done
-
-      - name: Get PR Info (Workflow Dispatch)
+      - name: Get PR Info
         id: get-pr-info
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number != ''
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -175,131 +63,55 @@ jobs:
               return '{}';
             }
 
-      - name: Test changed Casks (Workflow Dispatch)
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number != '' && steps.get-pr-info.outputs.result != '{}'
+      - name: Parse PR info
+        id: parse-pr-info
+        if: steps.get-pr-info.outputs.result != '{}'
         run: |
-          # 解析PR信息
           PR_INFO='${{ steps.get-pr-info.outputs.result }}'
           PR_NUMBER="${{ github.event.inputs.pr_number }}"
           echo "Testing PR #$PR_NUMBER"
           
-          # 提取分支名称和变更的文件
+          # 提取分支名称
           BRANCH_NAME=$(echo "$PR_INFO" | jq -r '.headRefName')
           echo "PR branch: $BRANCH_NAME"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           
-          # 获取变更的文件
-          CHANGED_FILES=$(echo "$PR_INFO" | jq -r '.caskFiles[]')
-          
+          # 获取并保存变更的文件列表
+          CHANGED_FILES=$(echo "$PR_INFO" | jq -r '.caskFiles[]' | tr '\n' ',' | sed 's/,$//')
           if [ -z "$CHANGED_FILES" ]; then
             echo "No Cask files changed in this PR."
-            exit 0
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changed Cask files: $CHANGED_FILES"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "changed_files=$CHANGED_FILES" >> $GITHUB_OUTPUT
           fi
-          
-          echo "Changed Cask files:"
-          echo "$CHANGED_FILES"
-          
-          # 检出PR的分支
-          git fetch origin pull/$PR_NUMBER/head:$BRANCH_NAME
-          git checkout $BRANCH_NAME
-          
-          # 获取仓库根目录
-          REPO_ROOT=$(git rev-parse --show-toplevel)
-          
-          # 对每个修改的cask文件执行测试
-          for file in $CHANGED_FILES; do
-            cask=$(basename "$file" .rb)
-            echo "===== Testing Cask: $cask ====="
-            
-            # 构建完整的文件路径
-            FULL_FILE_PATH="$REPO_ROOT/$file"
-            echo "Full file path: $FULL_FILE_PATH"
-            
-            # 审计cask - 使用完整的文件路径
-            echo "Auditing $file..."
-            brew audit --cask --online "$FULL_FILE_PATH"
-            
-            # 检查代码风格 - 使用完整的文件路径
-            echo "Running style check for $file..."
-            brew style --fix "$FULL_FILE_PATH"
-            
-            # 安装cask - 使用完整的文件路径
-            echo "Installing $file..."
-            brew install --cask "$FULL_FILE_PATH"
-            
-            # 卸载cask (卸载时需要使用cask名称)
-            echo "Uninstalling $cask..."
-            brew uninstall --cask "$cask"
-          done
 
-  auto-merge:
-    needs: test-bot
-    if: >
-      (github.event_name == 'pull_request' || github.event.inputs.pr_number != '') &&
-      !contains(github.event.pull_request.labels.*.name, 'no-auto-merge')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Auto-merge PR
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            let prNumber;
-            let branchName;
-            
-            if ('${{ github.event_name }}' === 'pull_request') {
-              prNumber = context.payload.pull_request.number;
-              branchName = context.payload.pull_request.head.ref;
-            } else if ('${{ github.event.inputs.pr_number }}' !== '') {
-              prNumber = parseInt('${{ github.event.inputs.pr_number }}');
-              
-              // 获取PR信息
-              const { data: pr } = await github.rest.pulls.get({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: prNumber
-              });
-              
-              branchName = pr.head.ref;
-            }
-            
-            if (!prNumber) {
-              console.log('No PR number found, skipping auto-merge');
-              return;
-            }
-            
-            console.log(`Attempting to merge PR #${prNumber}, branch: ${branchName}`);
-            
-            try {
-              // 检查PR是否来自autobump
-              const isAutobump = branchName.startsWith('bump-');
-              
-              if (isAutobump) {
-                console.log('This is an autobump PR, proceeding with auto-merge');
-                
-                // 合并PR
-                await github.rest.pulls.merge({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  pull_number: prNumber,
-                  merge_method: 'squash'
-                });
-                
-                console.log('PR merged successfully!');
-                
-                // 删除分支
-                await github.rest.git.deleteRef({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  ref: `heads/${branchName}`
-                });
-                
-                console.log('Branch deleted successfully!');
-              } else {
-                console.log('This is not an autobump PR, skipping auto-merge');
-              }
-            } catch (error) {
-              console.error('Error during auto-merge process:', error);
-            }
+  # 测试任务：直接调用可重用的工作流
+  test-pull-request:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/test-casks.yml
+    with:
+      event_name: pull_request
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test-push:
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/test-casks.yml
+    with:
+      event_name: push
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test-workflow-dispatch:
+    if: github.event_name == 'workflow_dispatch' && needs.get-pr-info.outputs.has_changes == 'true'
+    needs: get-pr-info
+    uses: ./.github/workflows/test-casks.yml
+    with:
+      event_name: workflow_dispatch
+      pr_number: ${{ github.event.inputs.pr_number }}
+      branch_name: ${{ needs.get-pr-info.outputs.branch_name }}
+      files: ${{ needs.get-pr-info.outputs.changed_files }}
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

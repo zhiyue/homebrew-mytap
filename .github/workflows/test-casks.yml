@@ -1,0 +1,197 @@
+name: 测试 Casks
+
+on:
+  workflow_call:
+    inputs:
+      pr_number:
+        description: '需要测试的PR编号'
+        type: string
+        required: false
+      files:
+        description: '需要测试的文件列表（逗号分隔）'
+        type: string
+        required: false
+      branch_name:
+        description: 'PR的分支名称'
+        type: string
+        required: false
+      event_name:
+        description: '触发事件名称'
+        type: string
+        required: true
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+
+jobs:
+  test-casks:
+    strategy:
+      matrix:
+        os: [macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Cache Homebrew Bundler RubyGems
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.set-up-homebrew.outputs.gems-path }}
+          key: ${{ matrix.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
+          restore-keys: ${{ matrix.os }}-rubygems-
+
+      - name: Install Homebrew Bundler RubyGems
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: brew install-bundler-gems
+
+      - name: Cleanup before tests
+        run: brew test-bot --only-cleanup-before
+
+      - name: Setup for tests
+        run: brew test-bot --only-setup
+
+      - name: Check tap syntax
+        run: brew test-bot --only-tap-syntax
+        continue-on-error: true
+
+      - name: Fix style for Casks
+        run: brew style --fix --cask
+        continue-on-error: true
+
+      # 处理Pull Request事件
+      - name: Test changed Casks (Pull Request)
+        if: inputs.event_name == 'pull_request'
+        run: |
+          # 获取PR中变更的文件
+          CHANGED_FILES=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | grep '^Casks/.*\.rb$' || true)
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No Cask files changed in this PR."
+            exit 0
+          fi
+          
+          echo "Changed Cask files:"
+          echo "$CHANGED_FILES"
+          
+          # 获取仓库根目录
+          REPO_ROOT=$(git rev-parse --show-toplevel)
+          
+          # 对每个修改的cask文件执行测试
+          for file in $CHANGED_FILES; do
+            cask=$(basename "$file" .rb)
+            echo "===== Testing Cask: $cask ====="
+            
+            # 构建完整的文件路径
+            FULL_FILE_PATH="$REPO_ROOT/$file"
+            echo "Full file path: $FULL_FILE_PATH"
+            
+            # 审计cask - 使用cask名称
+            echo "Auditing $cask..."
+            brew audit --cask --online "$cask"
+            
+            # 检查代码风格 - 使用完整的文件路径
+            echo "Running style check for $file..."
+            brew style --fix "$FULL_FILE_PATH"
+            
+            # 安装cask - 使用完整的文件路径
+            echo "Installing $file..."
+            brew install --cask "$FULL_FILE_PATH"
+            
+            # 卸载cask (卸载时需要使用cask名称)
+            echo "Uninstalling $cask..."
+            brew uninstall --cask "$cask"
+          done
+
+      # 处理Push事件
+      - name: Test changed Casks (Push)
+        if: inputs.event_name == 'push'
+        run: |
+          # 获取Push中变更的文件
+          CHANGED_FILES=$(git diff --name-only "${{ github.event.before }}" "${{ github.event.after }}" | grep '^Casks/.*\.rb$' || true)
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No Cask files changed in this push."
+            exit 0
+          fi
+          
+          echo "Changed Cask files:"
+          echo "$CHANGED_FILES"
+          
+          # 获取仓库根目录
+          REPO_ROOT=$(git rev-parse --show-toplevel)
+          
+          # 对每个修改的cask文件执行测试
+          for file in $CHANGED_FILES; do
+            cask=$(basename "$file" .rb)
+            echo "===== Testing Cask: $cask ====="
+            
+            # 构建完整的文件路径
+            FULL_FILE_PATH="$REPO_ROOT/$file"
+            echo "Full file path: $FULL_FILE_PATH"
+            
+            # 审计cask - 使用cask名称
+            echo "Auditing $cask..."
+            brew audit --cask --online "$cask"
+            
+            # 检查代码风格 - 使用完整的文件路径
+            echo "Running style check for $file..."
+            brew style --fix "$FULL_FILE_PATH"
+            
+            # 安装cask - 使用完整的文件路径
+            echo "Installing $file..."
+            brew install --cask "$FULL_FILE_PATH"
+            
+            # 卸载cask (卸载时需要使用cask名称)
+            echo "Uninstalling $cask..."
+            brew uninstall --cask "$cask"
+          done
+
+      # 处理手动触发事件
+      - name: Checkout PR branch (Workflow Dispatch)
+        if: inputs.event_name == 'workflow_dispatch' && inputs.pr_number != '' && inputs.branch_name != '' && inputs.files != ''
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        run: |
+          # 检出PR分支
+          git fetch origin pull/${{ inputs.pr_number }}/head:${{ inputs.branch_name }}
+          git checkout ${{ inputs.branch_name }}
+          
+          # 获取仓库根目录
+          REPO_ROOT=$(git rev-parse --show-toplevel)
+          echo "Repository root: $REPO_ROOT"
+
+      - name: Test changed Casks (Workflow Dispatch)
+        if: inputs.event_name == 'workflow_dispatch' && inputs.pr_number != '' && inputs.branch_name != '' && inputs.files != ''
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        run: |
+          # 获取仓库根目录
+          REPO_ROOT=$(git rev-parse --show-toplevel)
+          
+          # 处理变更的文件列表
+          IFS=',' read -ra FILES <<< "${{ inputs.files }}"
+          
+          # 对每个修改的cask文件执行测试
+          for file in "${FILES[@]}"; do
+            cask=$(basename "$file" .rb)
+            echo "===== Testing Cask: $cask ====="
+            
+            # 构建完整的文件路径
+            FULL_FILE_PATH="$REPO_ROOT/$file"
+            echo "Full file path: $FULL_FILE_PATH"
+            
+            # 审计cask - 使用cask名称
+            echo "Auditing $cask..."
+            brew audit --cask --online "$cask"
+            
+            # 检查代码风格 - 使用完整的文件路径
+            echo "Running style check for $file..."
+            brew style --fix "$FULL_FILE_PATH"
+            
+            # 安装cask - 使用完整的文件路径
+            echo "Installing $file..."
+            brew install --cask "$FULL_FILE_PATH"
+            
+            # 卸载cask (卸载时需要使用cask名称)
+            echo "Uninstalling $cask..."
+            brew uninstall --cask "$cask"
+          done
