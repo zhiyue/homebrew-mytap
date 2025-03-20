@@ -1,9 +1,9 @@
 cask "trae" do
   arch arm: "arm64", intel: "x64"
 
-  version "1.0.8482"
-  sha256 arm:   "dfdf4d991c2c4839c660bc2dad89aee1a68958b87419575500f64cbef45d2487",
-         intel: "214bf9d0554dd880d2790c958f884d538fbcd39ff57d49a9522084cc6eda2a4e"
+  version "1.0.9698"
+  sha256 arm:   "d086c3eea0bd4fb7b8f5e5526abc5d9c91ab533d07ecda802acabd95d8dd9d54",
+         intel: "e0941030e1dafbf0acabf5a286d4aae31aeb4b5c52aedf5c27d672689eebfeca"
 
   url "https://lf-cdn.trae.ai/obj/trae-ai-us/pkg/app/releases/stable/#{version}/darwin/Trae-darwin-#{arch}.dmg"
   name "Trae"
