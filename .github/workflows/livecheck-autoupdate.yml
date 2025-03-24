@@ -1,4 +1,4 @@
-name: Cask Livecheck 自动更新
+name: Cask Livecheck 
 
 on:
   schedule:
