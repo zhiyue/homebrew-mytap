@@ -6,6 +6,12 @@
 
 ## 可用软件
 
+| 名称 | 描述 | 安装命令 | 类型 |
+| --- | --- | --- | --- |
+| Synergy 3 | 多设备间共享键盘鼠标的工具 | `brew install zhiyue/mytap/synergy3` | 应用程序 |
+| 霞鹜新致宋 | 开源中文宋体字体 | `brew install zhiyue/mytap/font-lxgw-neo-zhisong` | 字体 |
+| 霞鹜新致宋 Plus | 霞鹜新致宋的增强版本 | `brew install zhiyue/mytap/font-lxgw-neo-zhisong-plus` | 字体 |
+
 ### Synergy 3
 
 Synergy是一款强大的软件工具，允许您在多台计算机之间共享一套键盘和鼠标。只需将鼠标移动到屏幕边缘，即可控制另一台计算机，就像它们是同一台机器一样。
