@@ -85,21 +85,21 @@ jobs:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_CASK_REPO_WORKFLOW_TOKEN || github.token }}
           HOMEBREW_DEVELOPER: "1"
           
-      - name: 触发测试工作流
-        if: steps.bump-casks.outputs.pr_number != ''
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            console.log('触发测试工作流 tests.yml，测试PR #${{ steps.bump-casks.outputs.pr_number }}');
+      # - name: 触发测试工作流
+      #   if: steps.bump-casks.outputs.pr_number != ''
+      #   uses: actions/github-script@v7
+      #   with:
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     script: |
+      #       console.log('触发测试工作流 tests.yml，测试PR #${{ steps.bump-casks.outputs.pr_number }}');
             
-            // 触发 tests.yml 工作流
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'tests.yml',
-              ref: 'main',
-              inputs: {
-                pr_number: '${{ steps.bump-casks.outputs.pr_number }}'
-              }
-            });
+      #       // 触发 tests.yml 工作流
+      #       await github.rest.actions.createWorkflowDispatch({
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         workflow_id: 'tests.yml',
+      #         ref: 'main',
+      #         inputs: {
+      #           pr_number: '${{ steps.bump-casks.outputs.pr_number }}'
+      #         }
+      #       });
