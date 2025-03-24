@@ -128,8 +128,8 @@ jobs:
           # 检查是否有任何 cask 被更新
           if [ -s updated_casks.txt ]; then
             echo "UPDATED=true" >> $GITHUB_ENV
-            # 将特殊字符转换为更安全的格式，使用 base64 编码
-            ENCODED_CASKS=$(cat updated_casks.txt | base64 -w 0)
+            # 将特殊字符转换为更安全的格式，使用 base64 编码（macOS 兼容）
+            ENCODED_CASKS=$(cat updated_casks.txt | base64)
             echo "UPDATED_CASKS_ENCODED=$ENCODED_CASKS" >> $GITHUB_ENV
           else
             echo "UPDATED=false" >> $GITHUB_ENV
@@ -145,8 +145,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "已为以下 cask 创建并尝试自动合并更新 PR：" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          # 解码 base64 编码的内容
-          echo "$UPDATED_CASKS_ENCODED" | base64 -d | while IFS= read -r line; do
+          # 解码 base64 编码的内容（macOS 兼容）
+          echo "$UPDATED_CASKS_ENCODED" | base64 -D | while IFS= read -r line; do
             echo "- $line" >> $GITHUB_STEP_SUMMARY
           done
         env:
