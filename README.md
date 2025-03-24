@@ -1,6 +1,6 @@
 # zhiyue Mytap
 
-[![brew test-bot for Casks](https://github.com/zhiyue/homebrew-mytap/actions/workflows/tests.yml/badge.svg)](https://github.com/zhiyue/homebrew-mytap/actions/workflows/tests.yml)
+[![Cask Livecheck](https://github.com/zhiyue/homebrew-mytap/actions/workflows/livecheck-autoupdate.yml/badge.svg)](https://github.com/zhiyue/homebrew-mytap/actions/workflows/livecheck-autoupdate.yml)
 
 这是一个个人维护的Homebrew Tap仓库，提供多种实用软件的安装配方。
 
