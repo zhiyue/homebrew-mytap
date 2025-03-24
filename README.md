@@ -12,38 +12,6 @@
 | 霞鹜新致宋 | 开源中文宋体字体 | `brew install zhiyue/mytap/font-lxgw-neo-zhisong` | 字体 |
 | 霞鹜新致宋 Plus | 霞鹜新致宋的增强版本 | `brew install zhiyue/mytap/font-lxgw-neo-zhisong-plus` | 字体 |
 
-### Synergy 3
-
-Synergy是一款强大的软件工具，允许您在多台计算机之间共享一套键盘和鼠标。只需将鼠标移动到屏幕边缘，即可控制另一台计算机，就像它们是同一台机器一样。
-
-**特性：**
-
-- 在Windows、macOS和Linux之间无缝共享键盘和鼠标
-- 支持复制粘贴文本和文件在不同计算机之间传输
-- 支持加密连接保证数据安全
-- 简单直观的设置界面
-- 支持Apple Silicon和Intel芯片的Mac电脑
-
-### 霞鹜新致宋 (LXGW Neo ZhiSong)
-
-霞鹜新致宋是一款开源中文字体，基于霞鹜文楷的衍生字体。这款字体结合了传统宋体的优雅与现代设计的清晰度，适合各种排版需求。
-
-**特性：**
-
-- 优雅的中文宋体风格
-- 开源免费使用
-- 适合长文阅读和排版
-
-### 霞鹜新致宋 Plus (LXGW Neo ZhiSong Plus)
-
-霞鹜新致宋Plus是霞鹜新致宋的增强版本，提供更丰富的字符支持和优化的字形设计。
-
-**特性：**
-
-- 比基础版拥有更多的字符支持
-- 字形设计更加精细
-- 同样开源免费，适合专业排版使用
-
 ## 如何安装这些软件？
 
 `brew install zhiyue/mytap/<formula>`
