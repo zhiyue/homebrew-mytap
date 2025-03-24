@@ -107,7 +107,16 @@ jobs:
                 
                 # 直接自动合并 PR
                 echo "自动合并 PR #$pr_number..."
-                gh pr merge "$pr_number" --merge --auto --delete-branch
+                
+                # 添加延迟，避免API请求过快导致的问题
+                echo "等待3秒后开始合并..."
+                sleep 3
+                
+                # 尝试使用自动合并，如果失败则尝试普通合并
+                if ! gh pr merge "$pr_number" --merge --auto --delete-branch; then
+                  echo "自动合并失败，尝试直接合并..."
+                  gh pr merge "$pr_number" --merge --delete-branch
+                fi
               else
                 echo "创建 PR 失败，输出: $pr_output"
               fi
