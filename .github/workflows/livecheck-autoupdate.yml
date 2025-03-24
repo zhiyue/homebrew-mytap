@@ -115,7 +115,10 @@ jobs:
                 # 尝试使用自动合并，如果失败则尝试普通合并
                 if ! gh pr merge "$pr_number" --merge --auto --delete-branch; then
                   echo "自动合并失败，尝试直接合并..."
-                  gh pr merge "$pr_number" --merge --delete-branch
+                  if ! gh pr merge "$pr_number" --merge --delete-branch; then
+                    echo "警告: PR #$pr_number 合并失败，请手动检查"
+                    echo "$cask_name: $curr_version -> $latest_version (PR #$pr_number, 需要手动合并)" >> updated_casks.txt
+                  fi
                 fi
               else
                 echo "创建 PR 失败，输出: $pr_output"
@@ -128,8 +131,8 @@ jobs:
           # 检查是否有任何 cask 被更新
           if [ -s updated_casks.txt ]; then
             echo "UPDATED=true" >> $GITHUB_ENV
-            # 将特殊字符转换为更安全的格式，使用 base64 编码（macOS 兼容）
-            ENCODED_CASKS=$(cat updated_casks.txt | base64)
+            # 将特殊字符转换为更安全的格式，使用 base64 编码（macOS 兼容），添加-b 0参数避免换行
+            ENCODED_CASKS=$(cat updated_casks.txt | base64 -b 0)
             echo "UPDATED_CASKS_ENCODED=$ENCODED_CASKS" >> $GITHUB_ENV
           else
             echo "UPDATED=false" >> $GITHUB_ENV
