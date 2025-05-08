@@ -1,9 +1,9 @@
 cask "synergy3" do
   arch arm: "arm64", intel: "x64"
 
-  version "3.3.0"
-  sha256 arm:   "099fd081af896fe4d823dd374e855af96b50882029f9484710c9545886eed0e9",
-         intel: "082856cedce4b6fce503fa16b7c89bca495afd088b75a988f36d645e266c9e4c"
+  version "3.3.1"
+  sha256 arm:   "1aa7e92182623d4bba7da48c98c27e67f5aaa15bb8481c6c963fb6990ba77eae",
+         intel: "d4a36ad0c10c0d6f74a3ea2a9d88fe77ac9f551ff06de8654d3ecfeb93d49ac4"
 
   url "https://symless.com/synergy/synergy/api/download/synergy-#{version}-macos-#{arch}.dmg"
   name "Synergy"
